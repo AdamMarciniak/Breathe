@@ -49,6 +49,8 @@ public class HttpRequestService extends Service {
         super.onCreate();
         Log.e(TAG, "Created HttpService");
 
+
+
     }
 
     @Override
@@ -56,7 +58,6 @@ public class HttpRequestService extends Service {
         Log.e(TAG, "Started Http Service");
 
         return super.onStartCommand(intent, flags, startId);
-
     }
 
     @Override

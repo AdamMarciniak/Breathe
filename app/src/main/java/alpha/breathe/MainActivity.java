@@ -21,7 +21,6 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -67,15 +66,11 @@ import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener;
 
 import com.karumi.dexter.listener.single.PermissionListener;
-
-
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
-
-import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
@@ -89,7 +84,6 @@ import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
@@ -916,9 +910,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setAutoLocationButtonState();
 
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            getWindow().setStatusBarColor(getColor(R.color.app_blue));
-        }
+
+        getWindow().setStatusBarColor(getColor(R.color.app_blue));
+
 
 
         photoPopup.setVisibility(View.INVISIBLE);
@@ -1425,7 +1419,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     editor.putString("webUrlSecret", webUrlSecret);
                     editor.putString("userName", userName);
                     editor.putString("userEmail", userEmail);
-                    editor.commit();
+                    editor.apply();
 
 
                 } catch (org.json.JSONException e) {
