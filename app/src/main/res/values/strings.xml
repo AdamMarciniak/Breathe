@@ -3,7 +3,7 @@
     <string name="custom_location"><u>Custom Location</u></string>
     <string name="next"><u>Next</u></string>
     <string name="back">Back</string>
-    <string name="server_client_id">961253970305-enlf3veorih3ucflp30rl9no49190jms.apps.googleusercontent.com</string>
+    <string name="google_server_client_id">961253970305-enlf3veorih3ucflp30rl9no49190jms.apps.googleusercontent.com</string>
     <string name="messageUrl">http://breathe.global/checkin</string>
     <string name="deleteURL">http://breathe.global/delete-my-history</string>
     <string name="travellerUrl">http://breathe.global/traveller/</string>

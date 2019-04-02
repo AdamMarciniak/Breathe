@@ -37,7 +37,6 @@ public class MainDBHelper extends SQLiteOpenHelper {
                 CheckinEntry.COLUMN_TIMESTAMP + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP " +
                 ");";
 
-
         db.execSQL(SQL_CREATE_MAIN_DB_TABLE);
 
     }

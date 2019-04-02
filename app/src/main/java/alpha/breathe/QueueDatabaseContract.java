@@ -20,6 +20,5 @@ public class QueueDatabaseContract {
         public static final String COLUMN_IMAGEPATH = "imagePath";
         public static final String COLUMN_SENDING = "sending";
 
-
     }
 }

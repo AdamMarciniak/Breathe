@@ -45,7 +45,6 @@ public class AutoUpdateService extends Service {
     int gpsFlag;
 
     int locationPeriod = 60 * 1000;
-    int timeoutPeriod = locationPeriod; //ms
 
     public static final String CHANNEL_ID = "autoLocationNotify";
     private static final String TAG = "AutoUpdateService";
@@ -60,7 +59,6 @@ public class AutoUpdateService extends Service {
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -73,7 +71,6 @@ public class AutoUpdateService extends Service {
 
         createNotificationChannel();
         Log.e(TAG, "Starting Location Service. AutoUpdateService.");
-
 
         String title = intent.getStringExtra("notificationExtraTitle");
         token = intent.getStringExtra("userToken");
@@ -236,7 +233,6 @@ public class AutoUpdateService extends Service {
             runFlag = false;
             Log.d(TAG, "Removed Net Location Listener");
         }
-
 
         timer1.cancel();
 

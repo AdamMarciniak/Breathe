@@ -15,7 +15,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
@@ -30,10 +29,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.StrictMode;
 import android.provider.MediaStore;
-import android.renderscript.Allocation;
-import android.renderscript.Element;
-import android.renderscript.RenderScript;
-import android.renderscript.ScriptIntrinsicBlur;
+
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -48,8 +44,6 @@ import android.widget.Toast;
 import com.androidnetworking.AndroidNetworking;
 import com.crashlytics.android.Crashlytics;
 import com.facebook.stetho.Stetho;
-import com.getkeepsafe.taptargetview.TapTarget;
-import com.getkeepsafe.taptargetview.TapTargetSequence;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -103,7 +97,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.fabric.sdk.android.Fabric;
-import io.fotoapparat.Fotoapparat;
 import io.fotoapparat.view.CameraView;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -115,24 +108,21 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    static int[][] noteStates;
-    static int[] noteButtonColorStates;
+    private static int[][] noteStates;
+    private static int[] noteButtonColorStates;
 
-    private MapView mapView;
-
-    String TAG = "Main Activity";
+    private final String TAG = "Main Activity";
 
     @BindString(R.string.authGoogleUrl) String AUTH_GOOGLE_URL;
     @BindString(R.string.authWhoAmIUrl) String AUTH_WHOAMI_URL;
     @BindView(R.id.id_next_button) Button next_button;
     @BindView(R.id.id_back_button) Button back_button;
     @BindView(R.id.id_auto_location_image) ImageView autoLocationImage;
-    @BindView(R.id.id_tutLayout) View tutView;
+    @BindView(R.id.id_tutLayout) View tutorialView;
     @BindView(R.id.id_mainActivity) View mainView;
     @BindView(R.id.id_leave_note_image) ImageView leave_note_button;
     @BindView(R.id.id_textLogView) TextView logText;
     @BindView(R.id.id_httpText) TextView httpText;
-    @BindView(R.id.id_infoTextView) TextView infoTextView;
     @BindView(R.id.id_photoView) CameraView photoView;
     @BindView(R.id.id_share_button) Button shareButton;
     @BindView(R.id.id_openCamerButton2) Button openCameraButton2;
@@ -144,11 +134,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @BindView(R.id.id_responseTextView) TextView responseTextView;
     @BindView(R.id.id_imageNoteUsernameTextview) TextView imageNoteUsername;
     @BindView(R.id.id_messageNoteUsernameTextview2) TextView messageNoteUsername;
-
-
-
-
-    String absoluteImageFolder;
+    @BindView(R.id.mapView) MapView mapView;
 
     @OnClick(R.id.id_imageCardView) void clearImageView(){
 
@@ -165,8 +151,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .alpha(0.0f)
                 .setDuration(200)
                 .setListener(animatorListener);
-
-
 
     }
 
@@ -192,15 +176,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .alpha(0.0f)
                 .setDuration(200)
                 .setListener(animatorListener);
-
-
-
-
     }
 
-
-    int deleteDBCounter = 0;
-    @OnClick(R.id.id_deleteDB) void deleteDatabase() {
+    private int deleteDBCounter = 0;
+    @OnClick(R.id.id_deleteDB) void clearAllDatabasesAndMarkers() {
 
         deleteDBCounter += 1;
 
@@ -209,16 +188,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             HttpRequestService httpRequest = new HttpRequestService();
             httpRequest.sendDelete(userToken);
 
-
             cameraCoordinates.clear();
             messageCoordinates.clear();
             DatabaseService dbService = new DatabaseService();
 
             deleteDBCounter = 0;
-
-
-            Log.e(TAG, "RELOADING MAP MARKERS");
-
 
             File folder = new File(getFilesDir(),"photoStorage");
             String[] files;
@@ -232,11 +206,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
             dbService.clearDatabase(MainActivity.this);
-
             reloadMapMarkers();
-
         }
-
     }
 
     @OnClick(R.id.id_openCamerButton2) void openCamera(){
@@ -262,7 +233,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     .withListener(new MultiplePermissionsListener() {
                         @Override public void onPermissionsChecked(MultiplePermissionsReport report) {
                             locationPermissionFlag = true;
-                            cameraPermissionFlag = true;
 
                             Log.e(TAG, "Location and Camera Permission Granted. Opening Camera.");
 
@@ -274,7 +244,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     try {
 
                                         photoFile = createImageFile();
-
 
                                         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
                                         StrictMode.setVmPolicy(builder.build());
@@ -306,7 +275,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                                     int which) {
                                                     dialog.dismiss();
                                                     token.cancelPermissionRequest();
-                                                    cameraPermissionFlag = false;
                                                 }
                                             })
                                     .setPositiveButton(android.R.string.ok,
@@ -316,14 +284,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                                     int which) {
                                                     dialog.dismiss();
                                                     token.continuePermissionRequest();
-                                                    cameraPermissionFlag = true;
                                                 }
                                             })
                                     .setOnDismissListener(new DialogInterface.OnDismissListener() {
                                         @Override
                                         public void onDismiss(DialogInterface dialog) {
                                             token.cancelPermissionRequest();
-                                            cameraPermissionFlag = false;
                                             Log.e(TAG, "Camera Permission Dismissed");
 
                                         }
@@ -433,74 +399,66 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    BroadcastReceiver bReceiver;
-    BroadcastReceiver toastReceiver;
-    BroadcastReceiver databaseUpdateReceiver;
+    private BroadcastReceiver locationBroadcastReceiver;
+    private BroadcastReceiver toastBroadcastReceiver;
+    private BroadcastReceiver databaseUpdateReceiver;
 
+    private View[] notes;
 
-    View[] notes;
+    private GoogleSignInOptions gso;
+    private GoogleSignInClient mGoogleSignInClient;
 
-    GoogleSignInOptions gso;
-    GoogleSignInClient mGoogleSignInClient;
+    private Boolean locationPermissionFlag = false;
 
-    Boolean locationPermissionFlag = false;
-    Boolean cameraPermissionFlag = false;
-
-    String googleID;
-    String userToken;
-    String webUrlSecret;
-    String userName;
-    String userEmail;
-    String mCurrentPhotoPath;
+    private String googleID;
+    private String userToken;
+    private String webUrlSecret;
+    private String userName;
+    private String userEmail;
+    private String mCurrentPhotoPath;
 
     double dbLat;
-    double dbLng;
-    String dbMessage;
-    String dbTime;
-    String imagePath;
-    String dbResponse;
+    private double dbLng;
+    private String dbMessage;
+    private String dbTime;
+    private String imagePath;
 
-    String globalLat = "123.123";
-    String globalLong = "123.1230";
-    String globalTime = Calendar.getInstance().getTime().toString();
+    private String globalLat = "123.123";
+    private String globalLong = "123.1230";
+    private String globalTime = Calendar.getInstance().getTime().toString();
 
-    LocationComponent locationComponent;
+    private LocationComponent locationComponent;
 
+    int tutorialStateNumber = 0;
+    int autoSharingFlag;
 
-    int stateNumber = 0;
-    int sharingFlag;
+    private ArrayList<Feature> cameraCoordinates = new ArrayList<>();
+    private ArrayList<Feature> messageCoordinates = new ArrayList<>();
 
-    ArrayList<Feature> cameraCoordinates = new ArrayList<>();
-    ArrayList<Feature> messageCoordinates = new ArrayList<>();
+    private GeoJsonSource cameraSource;
+    private GeoJsonSource messageSource;
 
-    GeoJsonSource cameraSource;
-    GeoJsonSource messageSource;
+    private MapboxMap mapboxMap;
+    private MapboxMap.OnMapClickListener markerTapListener;
 
-    MapboxMap mapboxMap;
-    MapboxMap.OnMapClickListener listener;
+    private Boolean firstTimeFlag = true;
 
-
-    Boolean cameraFlag;
-    Boolean firstTimeFlag = true;
-
-    SharedPreferences settings;
-
-    Fotoapparat photoInstance;
+    private SharedPreferences settings;
 
     private void enableAutoLocationSharing(){
 
         SharedPreferences settings = getSharedPreferences("breathePrefs", 0);
         SharedPreferences.Editor editor = settings.edit();
-        sharingFlag = settings.getInt("sharingFlag",0);
+        autoSharingFlag = settings.getInt("autoSharingFlag",0);
 
-        if (!isMyServiceRunning(AutoUpdateService.class)){
+        if (!isServiceRunning(AutoUpdateService.class)){
 
             Log.e(TAG, "Enabled Location Sharing");
             (new Handler()).postDelayed(MainActivity.this::checkIfLocationEnabled, 1000);
             autoLocationImage.setImageResource(R.drawable.sharing_on);
-            sharingFlag = 1;
+            autoSharingFlag = 1;
 
-            editor.putInt("sharingFlag", sharingFlag);
+            editor.putInt("autoSharingFlag", autoSharingFlag);
             editor.apply();
             Intent intent = new Intent(MainActivity.this, AutoUpdateService.class);
             intent.putExtra("userToken",userToken);
@@ -510,15 +468,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         else{
             Log.e(TAG, "Disabled Location Sharing");
             autoLocationImage.setImageResource(R.drawable.sharing_off);
-            sharingFlag = 0;
+            autoSharingFlag = 0;
             Intent intent = new Intent(MainActivity.this, AutoUpdateService.class);
-            editor.putInt("sharingFlag", sharingFlag);
+            editor.putInt("autoSharingFlag", autoSharingFlag);
             editor.apply();
             stopService(intent);
 
         }
     }
-
 
     private void logUser() {
         // TODO: Use the current user's information
@@ -528,20 +485,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Crashlytics.setUserName(userName);
     }
 
-
-
-
-
     private void reloadMapMarkers(){
 
         DatabaseService dbService = new DatabaseService();
 
         ArrayList<JSONObject> jsonArray = dbService.broadcastDatabaseValues(MainActivity.this);
-
         Log.e(TAG, "RELOADING MAP MARKERS" );
         Log.e(TAG, jsonArray.toString() );
-
-
 
         if (!jsonArray.isEmpty()){
 
@@ -550,11 +500,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             Log.e(TAG, "Size of jsonArray: " + jsonArray.size() );
 
-
             for (JSONObject entry : jsonArray){
 
                 Log.e(TAG, entry.toString() );
-
 
                 try{
 
@@ -567,14 +515,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         dbLat = Double.parseDouble(entry.getString("lat"));
                         dbLng = Double.parseDouble(entry.getString("lng"));
 
-
                         Log.d(TAG, "Adding Image to coordinates ");
                         Log.d(TAG, "Image Path is: " + imagePath);
 
-
                         JsonObject cameraJson = new JsonObject();
                         cameraJson.addProperty("imagePath",imagePath);
-                        cameraJson.addProperty("response",dbResponse);
                         cameraJson.addProperty("time",dbTime);
 
                         cameraCoordinates.add(Feature.fromGeometry(
@@ -590,7 +535,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JsonObject messageJson = new JsonObject();
                             messageJson.addProperty("message", dbMessage);
                             messageJson.addProperty("time", dbTime);
-                            messageJson.addProperty("response", dbResponse);
                             Log.d(TAG, "Adding message to coordinates ");
                             Log.d(TAG, "Message is: " + dbMessage);
 
@@ -598,8 +542,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     Point.fromLngLat(dbLng, dbLat), messageJson));
                         }
                     }
-
-
 
                 }catch(JSONException e){
                     e.printStackTrace();
@@ -634,9 +576,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-
         LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(databaseUpdateReceiver, new IntentFilter("databaseReady"));
-
 
         mapboxMap.setStyle(Style.OUTDOORS,
                 new Style.OnStyleLoaded() {
@@ -665,30 +605,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
 
                         reloadMapMarkers();
-                        Log.e(TAG, "Sources added: " );
-
-
-                        Log.e(TAG, "Map Markers reloaded" );
-
-
-                        Log.e(TAG, "Setting sources. " );
-
 
                         mapboxMap.getUiSettings().setTiltGesturesEnabled(false);
-
-                        Log.e(TAG, "makinggeosources" );
-
-                        Log.e(TAG, "adding sources." );
 
                         style.addImage("camera-marker-image", BitmapFactory.decodeResource(
                                 MainActivity.this.getResources(), R.drawable.camera_marker));
 
                         style.addImage("message-marker-image", BitmapFactory.decodeResource(
                                 MainActivity.this.getResources(), R.drawable.message_marker));
-
-                        style.addImage("route-marker-image", BitmapFactory.decodeResource(
-                                MainActivity.this.getResources(), R.drawable.route_line));
-
 
                             style.addLayer(new SymbolLayer("camera-marker-layer", "camera-source")
                                     .withProperties(PropertyFactory.iconImage("camera-marker-image"),
@@ -701,11 +625,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     ));
 
 
-
-
-
-
-                        listener = new MapboxMap.OnMapClickListener() {
+                        markerTapListener = new MapboxMap.OnMapClickListener() {
                             @Override
                             public boolean onMapClick(@NonNull LatLng point) {
 
@@ -713,7 +633,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 PointF screenPoint = mapboxMap.getProjection().toScreenLocation(point);
                                 List<Feature> features = mapboxMap.queryRenderedFeatures(screenPoint, "camera-marker-layer","message-marker-layer");
                                 if (!features.isEmpty()) {
-
 
                                     Feature selectedFeature = features.get(0);
                                     Log.e(TAG, "ALL FEATURES CLICKED: " + features.toString() );
@@ -737,18 +656,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                                 Bitmap bitmap = BitmapFactory.decodeFile(myFile.getAbsolutePath(),bmOptions);
                                                 Drawable dr = new BitmapDrawable(getResources(), bitmap);
 
-
                                                 photoPopup.setImageDrawable(dr);
-
 
                                                 imageNoteUsername.setText(userName);
                                                 imageCardView.setAlpha(0);
                                                 imageCardView.setVisibility(View.VISIBLE);
 
                                                 photoPopup.setVisibility(View.VISIBLE);
-                                                infoTextView.setVisibility(View.INVISIBLE);
-                                                infoTextView.setText(dbResponse);
-
 
                                                 imageCardView.animate()
                                                         .alpha(1.0f)
@@ -782,12 +696,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                             }
 
                                         }
-                                        }
                                     }
+                                }
 
                                 else{
                                     Log.e(TAG, "onMapClick: empty click " );
-
 
                                 }
                                 return false;
@@ -795,10 +708,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         };
 
 
-                        mapboxMap.addOnMapClickListener(listener);
-
-
-
+                        mapboxMap.addOnMapClickListener(markerTapListener);
 
 
                         Dexter.withActivity(MainActivity.this)
@@ -807,17 +717,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     @Override public void onPermissionGranted(PermissionGrantedResponse response) {
                                         locationPermissionFlag = true;
                                         Log.e(TAG, "granted");
-
-
                                         enableLocationComponent(style,mapboxMap);
-
                                         locationPermissionFlag = true;
                                         Log.e(TAG, "onPermissionGranted:1 " );
 
                                     }
                                     @Override public void onPermissionDenied(PermissionDeniedResponse response) {
                                         Log.e(TAG, "denied");
-
                                         locationPermissionFlag = false;
 
                                     }
@@ -861,25 +767,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void enableLocationComponent(@NonNull Style loadedMapStyle, MapboxMap mapBoxMap) {
-
-
-                // Get an instance of the component
-                locationComponent = mapBoxMap.getLocationComponent();
-
-                // Activate with options
-                locationComponent.activateLocationComponent(this, loadedMapStyle);
-
-                // Enable to make component visible
-                locationComponent.setLocationComponentEnabled(true);
-
-
-                // Set the component's camera mode
-                locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
-
-                // Set the component's render mode
-                locationComponent.setRenderMode(RenderMode.COMPASS);
-
-
+            locationComponent = mapBoxMap.getLocationComponent();
+            locationComponent.activateLocationComponent(this, loadedMapStyle);
+            locationComponent.setLocationComponentEnabled(true);
+            locationComponent.setCameraMode(CameraMode.TRACKING_GPS_NORTH);
+            locationComponent.setRenderMode(RenderMode.COMPASS);
         }
 
 
@@ -893,47 +785,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-
-
-
-
-        mapView = findViewById(R.id.mapView);
+        AndroidNetworking.initialize(getApplicationContext());
 
         mapView.onCreate(savedInstanceState);
-
         imageCardView.setVisibility(View.GONE);
         messageCardView.setVisibility(View.GONE);
-
-
-
-        AndroidNetworking.initialize(getApplicationContext());
         setAutoLocationButtonState();
-
-
-
         getWindow().setStatusBarColor(getColor(R.color.app_blue));
-
-
 
         photoPopup.setVisibility(View.INVISIBLE);
 
         settings = getSharedPreferences("breathePrefs", 0);
         webUrlSecret = settings.getString("webUrlSecret","0");
-        cameraFlag = false;
-        File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "drawable");
-
-
-        sharingFlag = settings.getInt("sharingFlag",0);
-
-
-        tutView.setVisibility(View.GONE);
-
-        //showShowcase();
-
-
+        autoSharingFlag = settings.getInt("autoSharingFlag",0);
+        tutorialView.setVisibility(View.GONE);
 
     }
-
 
     @Override
     protected void onStart() {
@@ -949,58 +816,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         setTheme(R.style.DefaultTheme);
         restorePreferences();
-
         deleteDBCounter = 0;
+        setAutoLocationButtonState();
+
         if (firstTimeFlag) {
             Log.d("first", "First time flag");
-            setViewAndChildrenEnabled(mainView, false);
-            setTutorialNoteStates();
+            setViewAndChildrenStatus(mainView, false);
+            initializeTutorialNoteStates();
             showTutorial();
         }else{
             Log.e(TAG, "tutorial done" );
             mapView.getMapAsync(this);
         }
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
 
-                        globalLat = intent.getStringExtra("lat");
-                        globalLong = intent.getStringExtra("lng");
-                        globalTime = intent.getStringExtra("time");
-
-                    }
-                }, new IntentFilter(AutoUpdateService.ACTION_LOCATION_BROADCAST)
-        );
-
-
-        toastReceiver = new BroadcastReceiver() {
+        toastBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-
                 responseTextView.setEnabled(true);
-
-
-
                 String toastMessage = intent.getStringExtra("toastMessage");
                 Toast.makeText(MainActivity.this,toastMessage,Toast.LENGTH_LONG).show();
-
                 responseTextView.setText("");
-                //responseTextView.setVisibility(View.VISIBLE);
-
-
-
             }
         };
 
-
-
-
-        bReceiver = new BroadcastReceiver() {
+        locationBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.e(TAG, "Received Location Broadcast" );
                 globalLat = intent.getStringExtra("lat");
                 globalLong = intent.getStringExtra("lng");
                 globalTime = intent.getStringExtra("timeStamp");
@@ -1008,52 +850,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(bReceiver, new IntentFilter("LOCATION"));
-        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(toastReceiver, new IntentFilter("toastReceiver"));
-
+        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(locationBroadcastReceiver, new IntentFilter("LOCATION"));
+        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(toastBroadcastReceiver, new IntentFilter("toastBroadcastReceiver"));
 
 
         (new Handler()).postDelayed(MainActivity.this::checkIfLocationEnabled, 1000);
 
         photoView.setVisibility(View.INVISIBLE);
 
-
-        setAutoLocationButtonState();
-
-
-        Intent serviceIntent = new Intent(this, LocationService.class);
+        Intent locationServiceIntent = new Intent(this, LocationService.class);
 
         try{
-            startService(serviceIntent);
-
+            startService(locationServiceIntent);
         }catch(RuntimeException e){
             e.printStackTrace();
         }
-
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
-        Log.d("first","Main Pause");
         SharedPreferences settings = getSharedPreferences("breathePrefs", 0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putBoolean("tutFlag", firstTimeFlag);
+        editor.putBoolean("tutorialFirstTimeFlag", firstTimeFlag);
         editor.putString("lat",globalLat);
         editor.putString("lng",globalLong);
-        // Commit the edits!
         editor.apply();
         mapView.onPause();
 
         if (mapboxMap != null){
-            mapboxMap.removeOnMapClickListener(listener);
-
+            mapboxMap.removeOnMapClickListener(markerTapListener);
         }
-
-
-
-
     }
 
     @Override
@@ -1062,19 +889,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.e(TAG, "Called onStop");
         SharedPreferences settings = getSharedPreferences("breathePrefs", 0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putBoolean("tutFlag", firstTimeFlag);
-
-        LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(bReceiver);
+        editor.putBoolean("tutorialFirstTimeFlag", firstTimeFlag);
+        LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(locationBroadcastReceiver);
         LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(databaseUpdateReceiver);
-        LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(toastReceiver);
-
-
+        LocalBroadcastManager.getInstance(MainActivity.this).unregisterReceiver(toastBroadcastReceiver);
 
         // Commit the edits!
         editor.apply();
         mapView.onStop();
-
-
 
     }
 
@@ -1082,23 +904,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLowMemory() {
         super.onLowMemory();
         mapView.onLowMemory();
-
-
-
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.e(TAG, "Called onDestroy");
-
         mapView.onDestroy();
-
-
-
     }
 
-    private void setTutorialNoteStates(){
+    private void initializeTutorialNoteStates(){
 
         noteButtonColorStates = new int[]{
                 R.color.blue,
@@ -1139,9 +953,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private void setAutoLocationButtonState(){
-        if (isMyServiceRunning(AutoUpdateService.class)){
+        if (isServiceRunning(AutoUpdateService.class)){
             autoLocationImage.setImageResource(R.drawable.sharing_on);
-
         }
         else{
             autoLocationImage.setImageResource(R.drawable.sharing_off);
@@ -1150,10 +963,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void restorePreferences(){
         settings = getSharedPreferences("breathePrefs", 0);
-        firstTimeFlag = settings.getBoolean("tutFlag", true);
+        firstTimeFlag = settings.getBoolean("tutorialFirstTimeFlag", true);
         googleID = settings.getString("googleID","");
         userToken = settings.getString("userToken","");
-        sharingFlag = settings.getInt("sharingFlag",0);
+        autoSharingFlag = settings.getInt("autoSharingFlag",0);
         webUrlSecret = settings.getString("webUrlSecret","0");
         userName = settings.getString("userName","none");
         userEmail = settings.getString("userEmail","none");
@@ -1167,7 +980,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         logUser();
     }
 
-    public void animateNotes(int stateNum) {
+    private void animateNotes(int stateNum) {
 
         notes[stateNum].clearAnimation();
 
@@ -1207,11 +1020,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    void showTutorial(){
+    private void showTutorial(){
 
-        stateNumber = 0;
+        tutorialStateNumber = 0;
 
-        tutView.setVisibility(View.VISIBLE);
+        tutorialView.setVisibility(View.VISIBLE);
 
         Log.d("main","showtutorial");
         next_button = findViewById(R.id.id_next_button);
@@ -1223,7 +1036,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         back_button.setVisibility(View.GONE);
 
         gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.server_client_id))
+                .requestIdToken(getString(R.string.google_server_client_id))
                 .requestEmail()
                 .build();
 
@@ -1240,77 +1053,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         animateNotes(0);
 
         Log.d("but","NextButtonReady");
-        back_button.setOnClickListener((View v) -> animateNotes(--stateNumber));
-        next_button.setOnClickListener((View v) -> animateNotes(++stateNumber));
+        back_button.setOnClickListener((View v) -> animateNotes(--tutorialStateNumber));
+        next_button.setOnClickListener((View v) -> animateNotes(++tutorialStateNumber));
 
         findViewById(R.id.sign_in_button).setOnClickListener((View v) -> signIn());
 
     }
-
-    private void showShowcase(){
-
-
-
-
-
-        final TapTargetSequence targetSequence = new TapTargetSequence(this)
-                .targets(
-                        TapTarget.forView(findViewById(R.id.id_openCamerButton2), "Take a photo!", "Pin a photo at your current location.")
-                                .dimColor(android.R.color.black)
-                                .outerCircleColor(R.color.app_blue)
-                                .textColor(android.R.color.white)
-                                .transparentTarget(true)
-                                .targetRadius(100)
-
-                        ,
-                        TapTarget.forView(findViewById(R.id.id_leave_note_image), "Leave a note!", "Write a note and it will be pinned to your current location.")
-                                .dimColor(android.R.color.black)
-                                .outerCircleColor(R.color.app_blue)
-                                .textColor(android.R.color.white)
-                                .transparentTarget(true)
-                                .targetRadius(100)
-
-                        ,
-                        TapTarget.forView(findViewById(R.id.id_share_button), "Share your live map.", "Use the share button to send a link to your live map using your favorite messaging apps.")
-                                .dimColor(android.R.color.black)
-                                .outerCircleColor(R.color.app_blue)
-                                .textColor(android.R.color.white)
-                                .transparentTarget(true)
-                        .targetRadius(100)
-                        ,
-                        TapTarget.forView(findViewById(R.id.id_auto_location_image), "Auto Location Sharing", "Enable Auto Location Sharing to update your live map periodically.")
-                                .dimColor(android.R.color.black)
-                                .outerCircleColor(R.color.app_blue)
-                                .transparentTarget(true)
-                                .textColor(android.R.color.white)
-                                .targetRadius(200)
-
-                )
-                .listener(new TapTargetSequence.Listener() {
-                    // This listener will tell us when interesting(tm) events happen in regards
-                    // to the sequence
-                    @Override
-                    public void onSequenceFinish() {
-                        // Yay
-                        Log.e(TAG, "onSequenceFinish: " );
-                        firstTimeFlag = false;
-                    }
-
-                    @Override
-                    public void onSequenceStep(TapTarget lastTarget, boolean targetClicked) {
-                        // Perform action for the current target
-                        Log.e(TAG, "onSequenceStep: " );
-                    }
-
-                    @Override
-                    public void onSequenceCanceled(TapTarget lastTarget) {
-                        // Boo
-                        Log.e(TAG, "onSequenceCanceled: " );
-                    }
-                });
-
-        targetSequence.start();
-        }
 
 
     private void signIn() {
@@ -1324,11 +1072,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             // Signed in successfully, show authenticated UI.
             //updateUI(account);
-            sendAuthHttp(AUTH_GOOGLE_URL, account.getIdToken(), authcallback);
+            sendGoogleAuthenticationHttp(AUTH_GOOGLE_URL, account.getIdToken(), googleAuthenticationCallback);
             googleID = account.getIdToken();
             Log.d("IDs", googleID);
             SharedPreferences.Editor editor = getSharedPreferences("breathePrefs", MODE_PRIVATE).edit();
-            editor.putBoolean("tutFlag", false);
+            editor.putBoolean("tutorialFirstTimeFlag", false);
             editor.putString("googleID",googleID);
             editor.apply();
 
@@ -1342,7 +1090,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void sendAuthHttp(String url, String body, Callback callback) {
+    private void sendGoogleAuthenticationHttp(String url, String body, Callback callback) {
 
         final OkHttpClient client = new OkHttpClient();
 
@@ -1361,12 +1109,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    Callback authcallback = new Callback() {
+    private Callback googleAuthenticationCallback = new Callback() {
         @Override
         public void onFailure(Call call, IOException e) {
             Log.d("HttpService", "onFailure() Request was: " + call);
             Toast.makeText(MainActivity.this,"Unable to Sign in. Check your internet connection.",Toast.LENGTH_LONG).show();
-
 
         }
 
@@ -1381,7 +1128,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 userToken = authResponse;
                 editor.putString("userToken",authResponse);
                 editor.apply();
-                sendAuthHttp(AUTH_WHOAMI_URL, authResponse, whoamicallback);
+                sendGoogleAuthenticationHttp(AUTH_WHOAMI_URL, authResponse, breatheServerWhoAmICallback);
             }else{
                 Toast.makeText(MainActivity.this,"Unable to Sign in. We are having some difficulties on our side",Toast.LENGTH_LONG).show();
             }
@@ -1390,7 +1137,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     };
 
-    Callback whoamicallback = new Callback() {
+    private Callback breatheServerWhoAmICallback = new Callback() {
         @Override
         public void onFailure(Call call, IOException e) {
             Log.d("HttpService", "onFailure() Request was: " + call);
@@ -1431,8 +1178,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                     @Override
                     public void run() {
-                        tutView.setVisibility(View.GONE);
-                        setViewAndChildrenEnabled(mainView,true);
+                        tutorialView.setVisibility(View.GONE);
+                        setViewAndChildrenStatus(mainView,true);
                         back_button.setVisibility(View.GONE);
                         next_button.setVisibility(View.GONE);
 
@@ -1454,18 +1201,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     };
 
-    private static void setViewAndChildrenEnabled(View view, boolean enabled) {
+    private static void setViewAndChildrenStatus(View view, boolean enabled) {
         view.setEnabled(enabled);
         if (view instanceof ViewGroup) {
             ViewGroup viewGroup = (ViewGroup) view;
             for (int i = 0; i < viewGroup.getChildCount(); i++) {
                 View child = viewGroup.getChildAt(i);
-                setViewAndChildrenEnabled(child, enabled);
+                setViewAndChildrenStatus(child, enabled);
             }
         }
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
+    private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
@@ -1492,7 +1239,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public String getLocalToUTCDate(Date date) {
+    private String convertLocalDateToUTCString(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -1504,7 +1251,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private File createImageFile() throws IOException {
         // Create an image file name
-        String currentTime = getLocalToUTCDate(Calendar.getInstance().getTime());
+        String currentTime = convertLocalDateToUTCString(Calendar.getInstance().getTime());
 
         String imageFileName = "JPEG_" +currentTime +  "_";
         File storageDir = Environment.getExternalStoragePublicDirectory(
@@ -1532,19 +1279,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             handleSignInResult(task);
         }
 
+        // Camera API Result
         if (requestCode == 100 && resultCode == RESULT_OK) {
             AsyncTask.execute(new Runnable() {
                 @Override
                 public void run() {
 
                     try {
-
                         Date timeStamp = Calendar.getInstance().getTime();
-
                         Bitmap mImageBitmap = MediaStore.Images.Media.getBitmap(MainActivity.this.getContentResolver(), Uri.parse(mCurrentPhotoPath));
-                        mImageBitmap = rotateImageIfRequired(MainActivity.this, mImageBitmap, Uri.parse(mCurrentPhotoPath));
+                        mImageBitmap = makeImageUpright(MainActivity.this, mImageBitmap, Uri.parse(mCurrentPhotoPath));
 
-                        //create a file to write bitmap data
                         File path = new File(getFilesDir(), "photoStorage");
 
                         if (!path.exists()) {
@@ -1559,21 +1304,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         json.addProperty("lng", globalLong);
                         json.addProperty("imagePath", photoFile.getAbsolutePath());
 
-
                         cameraCoordinates.add(Feature.fromGeometry(
                                 Point.fromLngLat(Double.parseDouble(globalLong), Double.parseDouble(globalLat)), json));
-
 
                         ByteArrayOutputStream bos = new ByteArrayOutputStream();
                         mImageBitmap.compress(Bitmap.CompressFormat.JPEG, 25 /*ignored for PNG*/, bos);
                         byte[] bitmapdata = bos.toByteArray();
 
-                        //write the bytes in file
                         FileOutputStream fos = new FileOutputStream(photoFile);
                         fos.write(bitmapdata);
                         fos.flush();
                         fos.close();
-
 
                         Log.e(TAG, "Sending photoFile to Database!"  + photoFile.getAbsolutePath());
                         DatabaseService dbService = new DatabaseService();
@@ -1588,32 +1329,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri selectedImage) throws IOException {
+    private static Bitmap makeImageUpright(Context context, Bitmap img, Uri selectedImage) throws IOException {
 
         InputStream input = context.getContentResolver().openInputStream(selectedImage);
         ExifInterface ei;
-        if (Build.VERSION.SDK_INT > 23)
-            ei = new ExifInterface(input);
-        else
-            ei = new ExifInterface(selectedImage.getPath());
-
+        ei = new ExifInterface(input);
         int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
         switch (orientation) {
             case ExifInterface.ORIENTATION_ROTATE_90:
-                return rotateImage(img, 90);
+                return rotateImageByAngle(img, 90);
             case ExifInterface.ORIENTATION_ROTATE_180:
-                return rotateImage(img, 180);
+                return rotateImageByAngle(img, 180);
             case ExifInterface.ORIENTATION_ROTATE_270:
-                return rotateImage(img, 270);
+                return rotateImageByAngle(img, 270);
             default:
                 return img;
         }
     }
 
-    private static Bitmap rotateImage(Bitmap img, int degree) {
+    private static Bitmap rotateImageByAngle(Bitmap img, int degrees) {
         Matrix matrix = new Matrix();
-        matrix.postRotate(degree);
+        matrix.postRotate(degrees);
         Bitmap rotatedImg = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
         img.recycle();
         return rotatedImg;
@@ -1629,7 +1366,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         outState.putSerializable("latitude",globalLat);
         outState.putSerializable("longitude",globalLong);
         outState.putSerializable("time",globalTime);
-        outState.putInt("sharingFlag",sharingFlag);
+        outState.putInt("autoSharingFlag",autoSharingFlag);
 
     }
 
@@ -1643,25 +1380,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             globalLat = savedInstanceState.getSerializable("latitude").toString();
             globalLong = savedInstanceState.getSerializable("longitude").toString();
             globalTime = savedInstanceState.getSerializable("time").toString();
-            sharingFlag = savedInstanceState.getInt("sharingFlag");
+            autoSharingFlag = savedInstanceState.getInt("autoSharingFlag");
 
         } catch (NullPointerException e) {
-
+            e.printStackTrace();
         }
-    }
-
-    private void hideSystemUI() {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE
-                        // Set the content to appear under the system bars so that the
-                        // content doesn't resize when the system bars hide and show.
-                        // Hide the nav bar and status bar
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
 
@@ -1672,53 +1395,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             imageCardView.setVisibility(View.GONE);
         }else if(messageCardView.getVisibility() == View.VISIBLE){
             messageCardView.setVisibility(View.GONE);
-
-
         }
         else{
             MainActivity.super.onBackPressed();
         }
 
-
-
-
-
     }
 
-    public Bitmap screenShot(View view) {
-        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(),
-                view.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        view.draw(canvas);
-        return bitmap;
-    }
-
-    public static Bitmap blur(Context context, Bitmap image) {
-
-        float BITMAP_SCALE = 0.4f;
-        float BLUR_RADIUS = 7.5f;
-        int width = Math.round(image.getWidth() * BITMAP_SCALE);
-        int height = Math.round(image.getHeight() * BITMAP_SCALE);
-
-        Bitmap inputBitmap = Bitmap.createScaledBitmap(image, width, height,
-                false);
-        Bitmap outputBitmap = Bitmap.createBitmap(inputBitmap);
-
-        RenderScript rs = RenderScript.create(context);
-        ScriptIntrinsicBlur theIntrinsic = ScriptIntrinsicBlur.create(rs,
-                Element.U8_4(rs));
-        Allocation tmpIn = Allocation.createFromBitmap(rs, inputBitmap);
-        Allocation tmpOut = Allocation.createFromBitmap(rs, outputBitmap);
-        theIntrinsic.setRadius(BLUR_RADIUS);
-        theIntrinsic.setInput(tmpIn);
-        theIntrinsic.forEach(tmpOut);
-        tmpOut.copyTo(outputBitmap);
-
-        return outputBitmap;
-    }
-
-    private Bitmap getBlurredScreen(View view, Context context){
-        return blur(context,screenShot(view));
-    }
 }
 

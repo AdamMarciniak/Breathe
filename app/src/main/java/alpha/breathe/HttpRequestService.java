@@ -49,8 +49,6 @@ public class HttpRequestService extends Service {
         super.onCreate();
         Log.e(TAG, "Created HttpService");
 
-
-
     }
 
     @Override
@@ -76,7 +74,7 @@ public class HttpRequestService extends Service {
 
     private void sendToast(String toastMessage) {
         Intent intent = new Intent();
-        intent.setAction("toastReceiver");
+        intent.setAction("toastBroadcastReceiver");
         intent.putExtra("toastMessage", toastMessage);
         LocalBroadcastManager.getInstance(HttpRequestService.this).sendBroadcast(intent);
     }
@@ -85,8 +83,6 @@ public class HttpRequestService extends Service {
     public void sendCheckin(Context context,String id,String lat, String lng, String message,String time,String userToken, String imagePath){
 
         Log.e(TAG, "sendCheckin Called");
-
-
 
         Callback sendCheckinCallback = new Callback() {
             @Override
@@ -124,7 +120,6 @@ public class HttpRequestService extends Service {
     }
 
     private void sendCheckinHttp(String latitude, String longitude, String message,String timeStamp, String userToken,String imagePath, Callback callback) {
-
 
         final OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)
@@ -232,7 +227,6 @@ public class HttpRequestService extends Service {
         };
 
         sendDeleteHttp(userToken, sendDeleteCallback);
-
 
     }
 

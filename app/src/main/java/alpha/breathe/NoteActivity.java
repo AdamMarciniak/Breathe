@@ -31,8 +31,6 @@ public class NoteActivity extends Activity {
         noteBox.setLines(5);
         noteBox.setImeOptions(EditorInfo.IME_ACTION_SEND);
 
-
-
     }
 
     @Override
@@ -46,7 +44,6 @@ public class NoteActivity extends Activity {
         imm.showSoftInput(noteBox, InputMethodManager.SHOW_FORCED);
 
         DatabaseService dbService = new DatabaseService();
-
 
         noteBox.setOnEditorActionListener(new CustomEditText.OnEditorActionListener() {
             @Override

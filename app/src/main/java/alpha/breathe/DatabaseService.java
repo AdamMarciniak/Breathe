@@ -33,8 +33,6 @@ public class DatabaseService extends Service {
     private static QueueDBHelper queueDBHelper;
     private static MainDBHelper mainDBHelper;
 
-
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -53,12 +51,8 @@ public class DatabaseService extends Service {
         SQLiteDatabase mDatabase = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_SENDING,0);
-
         mDatabase.update(QueueDatabaseContract.QueueCheckinEntry.TABLE_NAME,cv,"id=? ",new String[]{id});
         mDatabase.close();
-
-
-
     }
 
     public void setSendingFlagOn(Context context,String id){
@@ -71,9 +65,6 @@ public class DatabaseService extends Service {
 
         mDatabase.update(QueueDatabaseContract.QueueCheckinEntry.TABLE_NAME,cv,"id=? ",new String[]{id});
         mDatabase.close();
-
-
-
     }
 
     private void addToMainDatabase(Context context,String token, String lat, String lng, Date timeStamp, String message, String imgPath){
@@ -85,7 +76,7 @@ public class DatabaseService extends Service {
         cv.put(MainDatabaseContract.CheckinEntry.COLUMN_TOKEN,token);
         cv.put(MainDatabaseContract.CheckinEntry.COLUMN_LAT,lat);
         cv.put(MainDatabaseContract.CheckinEntry.COLUMN_LNG,lng);
-        cv.put(MainDatabaseContract.CheckinEntry.COLUMN_TIME,getLocalToUTCDate(timeStamp));
+        cv.put(MainDatabaseContract.CheckinEntry.COLUMN_TIME,convertLocalDateToUTCString(timeStamp));
         cv.put(MainDatabaseContract.CheckinEntry.COLUMN_MSG,message);
         cv.put(MainDatabaseContract.CheckinEntry.COLUMN_IMAGEPATH,imgPath);
 
@@ -109,7 +100,7 @@ public class DatabaseService extends Service {
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_TOKEN,token);
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_LAT,lat);
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_LNG,lng);
-        cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_TIME,getLocalToUTCDate(timeStamp));
+        cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_TIME,convertLocalDateToUTCString(timeStamp));
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_MSG,message);
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_IMAGEPATH,imgPath);
         cv.put(QueueDatabaseContract.QueueCheckinEntry.COLUMN_SENDING,0);
@@ -118,14 +109,9 @@ public class DatabaseService extends Service {
         mDatabase.close();
         Log.e(TAG, "Added to Queue Database. Closed.");
 
-        //sendFromQueueDatabase(context);
-
          WorkManager mWorkManager;
          mWorkManager = WorkManager.getInstance();
          mWorkManager.enqueue(OneTimeWorkRequest.from(HttpWorker.class));
-
-
-
     }
 
     public void sendFromQueueDatabase(Context context){
@@ -137,8 +123,6 @@ public class DatabaseService extends Service {
         HttpRequestService httpService = new HttpRequestService();
 
         Cursor mCursor = mDatabase.query(QueueDatabaseContract.QueueCheckinEntry.TABLE_NAME,null,null,null,null,null,null);
-
-
         while (mCursor.moveToNext()) {
 
             int sendingFlag = mCursor.getInt(mCursor.getColumnIndex(QueueDatabaseContract.QueueCheckinEntry.COLUMN_SENDING));
@@ -154,7 +138,6 @@ public class DatabaseService extends Service {
                 String imagePath = mCursor.getString(mCursor.getColumnIndex(QueueDatabaseContract.QueueCheckinEntry.COLUMN_IMAGEPATH));
                 setSendingFlagOn(context,id);
 
-
                 httpService.sendCheckin(context,id,lat,lng,message,time,token,imagePath);
             }
 
@@ -162,7 +145,6 @@ public class DatabaseService extends Service {
 
         mCursor.close();
         mDatabase.close();
-
     }
 
     public void transferFromQueueDatabase(Context context, String id){
@@ -180,8 +162,6 @@ public class DatabaseService extends Service {
             Log.e(TAG, "Transferring ID" );
 
             mDatabase.delete(QueueDatabaseContract.QueueCheckinEntry.TABLE_NAME,"id=? ",new String[]{id});
-
-
         }
         else
         {
@@ -192,12 +172,7 @@ public class DatabaseService extends Service {
 
         mDatabase.close();
         mCursor.close();
-
-
-
-
     }
-
 
     public void clearDatabase(Context context) {
         mainDBHelper = new MainDBHelper(context);
@@ -211,17 +186,13 @@ public class DatabaseService extends Service {
         String queueclearDBQuery = "DELETE FROM "+ QueueDatabaseContract.QueueCheckinEntry.TABLE_NAME;
         queuemDatabase.execSQL(queueclearDBQuery);
         queuemDatabase.close();
-
-
     }
 
     public ArrayList<JSONObject> broadcastDatabaseValues(Context context){
 
         mainDBHelper= new MainDBHelper(context);
         SQLiteDatabase mDatabase = mainDBHelper.getWritableDatabase();
-
         ArrayList<JSONObject> jsonArray = new ArrayList<>();
-
         Cursor mCursor = mDatabase.query(MainDatabaseContract.CheckinEntry.TABLE_NAME,null,null,null,null,null,null);
         while (mCursor.moveToNext()){
             JSONObject entry = new JSONObject();
@@ -239,7 +210,6 @@ public class DatabaseService extends Service {
                 entry.put("time", time);
                 entry.put("imagePath", imagePath);
 
-
             }catch(JSONException e){
                 e.printStackTrace();
             }
@@ -251,12 +221,9 @@ public class DatabaseService extends Service {
         mDatabase.close();
 
         return jsonArray;
-
-
-
     }
 
-    public String getLocalToUTCDate(Date date) {
+    public String convertLocalDateToUTCString(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -265,5 +232,4 @@ public class DatabaseService extends Service {
         outputFmt.setTimeZone(TimeZone.getTimeZone("UTC"));
         return outputFmt.format(time);
     }
-
 }
