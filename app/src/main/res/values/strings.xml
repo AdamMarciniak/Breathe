@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Breathe</string>
+    <string name="custom_location"><u>Custom Location</u></string>
+    <string name="next"><u>Next</u></string>
+    <string name="back">Back</string>
+    <string name="server_client_id">961253970305-enlf3veorih3ucflp30rl9no49190jms.apps.googleusercontent.com</string>
+    <string name="messageUrl">http://breathe.global/checkin</string>
+    <string name="deleteURL">http://breathe.global/delete-my-history</string>
+    <string name="travellerUrl">http://breathe.global/traveller/</string>
+    <string name="authGoogleUrl">http://breathe.global/authenticate/google</string>
+    <string name="authWhoAmIUrl">http://breathe.global/whoami</string>
+    <string name="notification_title">Auto location sharing is on</string>
+    <string name="notification_text">Tap to turn off location sharing</string>
+    <string name="mapBoxApiToken">pk.eyJ1IjoicG9saXNoZHVkZTIwIiwiYSI6ImNqdDZrNWdhMDBoeHc0NHAzenczbGtscGMifQ.RkL655zr9B5toR6lIEdhAA</string>
+
+
+</resources>

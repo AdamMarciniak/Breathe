@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white">
+
+    <alpha.breathe.CustomEditText
+        android:id="@+id/id_note_box"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/transparent"
+        android:ems="10"
+        android:fontFamily="@font/roboto"
+        android:gravity="top"
+        android:hint="Leave a note"
+        android:inputType="textMultiLine"
+        android:padding="20dp"
+        android:textColor="@color/black"
+        android:maxLength="250"
+        android:textSize="24sp"
+        android:imeOptions="actionSend"
+
+        app:layout_constraintBottom_toTopOf="@+id/cardView"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="8dp" />
+
+    <android.support.v7.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="match_parent"
+        android:layout_height="59dp"
+        android:imeOptions="actionSend"
+        app:cardBackgroundColor="@color/white"
+        app:cardElevation="3dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:layout_editor_absoluteX="0dp">
+
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </android.support.v7.widget.CardView>
+</android.support.constraint.ConstraintLayout>
